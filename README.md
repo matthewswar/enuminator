@@ -1,0 +1,2 @@
+# enuminator
+Golang Enumeration Generator
