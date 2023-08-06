@@ -1,0 +1,28 @@
+on:
+  workflow_dispatch:
+    inputs:
+      tag_version:
+        type: string
+        description: "The new version of the release."
+        required: true
+
+jobs:
+  update_version:
+    runs-on: self-hosted
+    name: Update Version
+    steps:
+      - uses: actions/checkout@v2
+      - name: Write Version
+        run: |
+          if [[ ! "${{ github.event.inputs.tag_version }}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+            echo "Invalid version ${{ github.event.inputs.tag_version }}"
+            exit 1
+          fi
+          echo "${{ github.event.inputs.tag_version }}" > ./version/.VERSION
+      - name: Create Tag
+        run: |
+          git switch -c temp/tag
+          git commit -am "Version release ${{ github.event.inputs.tag_version }}"
+          git tag -a ${{ github.event.inputs.tag_version }} "Version release ${{ github.event.inputs.tag_version }}"
+          git push origin ${{ github.event.inputs.tag_version }}
+          git push origin --delete temp/tag

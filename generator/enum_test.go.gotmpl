@@ -1,0 +1,61 @@
+package {{.PackageName}}
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	{{- if gt (len .ImportPath) 0 }}
+	"{{ .ImportPath }}"
+	{{ end -}}
+)
+
+func Test{{ .EnumName }}IsNotCaseSensitiveWhenUnmarshaling(t *testing.T) {
+	testValue := {{ index (index .EnumValues 0) 1 }}
+
+	data := make(map[string]{{ .EnumName }})
+	require.NoError(t, json.Unmarshal([]byte(fmt.Sprintf(`{"test": "%s"}`, strings.ToLower(testValue))), &data))
+	require.EqualValues(t, {{ index (index .EnumValues 0) 0 }}, testValue)
+
+	data = make(map[string]{{ .EnumName }})
+	require.NoError(t, json.Unmarshal([]byte(fmt.Sprintf(`{"test": "%s"}`, strings.ToUpper(testValue))), &data))
+	require.EqualValues(t, {{ index (index .EnumValues 0) 0 }}, testValue)
+}
+
+func Test{{ .EnumName }}UnmarshalErrorsOnInvalidEnum(t *testing.T) {
+	badValue := "not a real enum value"
+	data := make(map[string]{{ .EnumName }})
+	err := json.Unmarshal([]byte(fmt.Sprintf(`{"test": "%s"}`, badValue)), &data)
+	require.Error(t, err)
+	require.ErrorContains(t, err, fmt.Sprintf("%s is not a valid {{ .EnumName }}", badValue))
+}
+
+func Test{{ .EnumName }}MarshalFailsOnInvalidEnum(t *testing.T) {
+	badValue := "not a valid value"
+	invalidValue := {{ .EnumName }}(badValue)
+	_, err := json.Marshal(invalidValue)
+	require.Error(t, err)
+	require.ErrorContains(t, err, fmt.Sprintf("%s is not a valid {{ .EnumName }}", badValue))
+}
+
+func Test{{ .EnumName}}MarshalOutputsExpectedCasing(t *testing.T) {
+	testValue := {{ index (index .EnumValues 0) 1 }}
+	testValue = strings.ToUpper(testValue)
+
+	if _, ok := {{ .UnexportedEnumName }}Mapping[testValue]; ok {
+		// Try lower case
+		testValue = strings.ToLower(testValue)
+		if _, ok = {{ .UnexportedEnumName }}Mapping[testValue]; ok {
+			// Can't test this
+			return
+		}
+	}
+
+	marshalValue, err := json.Marshal({{ .EnumName }}(testValue))
+	require.NoError(t, err)
+	marshalValue = bytes.Trim(marshalValue, "\"")
+	require.Contains(t, {{ .UnexportedEnumName }}Mapping, string(marshalValue))
+}
