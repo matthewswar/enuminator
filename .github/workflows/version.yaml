@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Update Version
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Write Version
         run: |
           if [[ ! "${{ github.event.inputs.tag_version }}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
@@ -23,6 +23,6 @@ jobs:
         run: |
           git switch -c temp/tag
           git commit -am "Version release ${{ github.event.inputs.tag_version }}"
-          git tag -a ${{ github.event.inputs.tag_version }} "Version release ${{ github.event.inputs.tag_version }}"
+          git tag -a -m "Version release ${{ github.event.inputs.tag_version }}" ${{ github.event.inputs.tag_version }}
           git push origin ${{ github.event.inputs.tag_version }}
           git push origin --delete temp/tag
