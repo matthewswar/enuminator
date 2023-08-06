@@ -12,6 +12,7 @@ jobs:
     name: Update Version
     steps:
       - uses: actions/checkout@v3
+      - uses: fregante/setup-git-user@v2
       - name: Write Version
         run: |
           if [[ ! "${{ github.event.inputs.tag_version }}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
@@ -21,8 +22,8 @@ jobs:
           echo "${{ github.event.inputs.tag_version }}" > ./version/.VERSION
       - name: Create Tag
         run: |
-          git switch -c temp/tag
+          git switch -c release/${{ github.event.inputs.tag_version }}
           git commit -am "Version release ${{ github.event.inputs.tag_version }}"
+          git push -u origin release/${{ github.event.inputs.tag_version }}
           git tag -a -m "Version release ${{ github.event.inputs.tag_version }}" ${{ github.event.inputs.tag_version }}
           git push origin ${{ github.event.inputs.tag_version }}
-          git push origin --delete temp/tag
